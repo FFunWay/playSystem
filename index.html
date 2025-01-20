@@ -122,9 +122,9 @@
 
         document.getElementById("regressionButton").onclick = async () => {
             if (connected) {
-                const regressionData = "4,5";
+                const regressionData = "Return";
                 await sendDataWithChunks(regressionData); // 使用分段機制傳送
-                alert("回歸數據已傳送!");
+                alert("回歸");
             } else {
                 alert("請先連接藍牙");
             }

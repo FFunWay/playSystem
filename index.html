@@ -45,9 +45,25 @@
         let record = [];
         let bluetoothDevice = null;
         let characteristic;
+        let pendingCommand = null;
 
         const serviceUuid = '0000ffe0-0000-1000-8000-00805f9b34fb';
         const characteristicUuid = '0000ffe1-0000-1000-8000-00805f9b34fb';
+
+        document.addEventListener("DOMContentLoaded", () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            
+            // 我們用 'cmd' 來當作指令參數 (例如 ?cmd=bee)
+            const command = urlParams.get('cmd');
+            // 我們也支援 'data' 參數 (例如 ?cmd=custom&data=1,2,3)
+            const data = urlParams.get('data');
+
+            if (command) {
+                console.log("偵測到 URL 指令:", command, "資料:", data);
+                // 將指令儲存起來，等待藍牙連線後執行
+                pendingCommand = { cmd: command, data: data };
+            }
+        });
 
         // 連接藍牙
         document.getElementById("connectButton").onclick = async () => {
@@ -64,6 +80,15 @@
                 connected = true;
                 console.log("已連接HM-10");
                 alert("已連接HM-10");
+
+                if (pendingCommand) {
+                    console.log("正在執行待辦指令:", pendingCommand.cmd);
+                    // 呼叫新函式來處理指令
+                    await handleUrlCommand(pendingCommand.cmd, pendingCommand.data);
+                    
+                    // 清除指令，避免重複執行
+                    pendingCommand = null; 
+                }
             } catch (error) {
                 console.error("連接失敗:", error);
                 alert("連接失敗");
@@ -99,6 +124,65 @@
                 alert("請先連接藍牙或紀錄為空");
             }
         };
+
+        async function handleUrlCommand(command, data) {
+            if (!connected) {
+                console.log("指令處理失敗：藍牙未連接");
+                return;
+            }
+
+            let dataToSend = "";
+            let alertMessage = "";
+
+            switch (command) {
+                case 'bee':
+                    dataToSend = "5,3,3,4,2,2,1,2,3,4,5,5,5,";
+                    alertMessage = "已自動傳送 '小蜜蜂'";
+                    break;
+                
+                case 'hbd':
+                    dataToSend = "1,1,2,1,4,3,1,1,2,1,5,4,";
+                    alertMessage = "已自動傳送 '生日快樂'";
+                    break;
+
+                case 'return':
+                    dataToSend = "Return";
+                    alertMessage = "已自動傳送 '回歸'";
+                    break;
+
+                case 'send':
+                    // 這個會傳送您在 record 陣列中的數據 (如果有的話)
+                    if (record.length > 0) {
+                        dataToSend = record.join(",");
+                        alertMessage = `已自動傳送紀錄: ${dataToSend}`;
+                    } else {
+                        alertMessage = "自動傳送失敗：紀錄為空";
+                    }
+                    break;
+
+                case 'custom':
+                    // 允許 URL 傳送自訂數據
+                    // 範例: ?cmd=custom&data=1,2,3,4,5
+                    if (data) {
+                        dataToSend = data;
+                        alertMessage = `已自動傳送自訂數據: ${dataToSend}`;
+                    } else {
+                        alertMessage = "自訂指令 'custom' 缺少 'data' 參數";
+                    }
+                    break;
+
+                default:
+                    console.log('未知的 URL 指令:', command);
+                    alert(`未知的 URL 指令: ${command}`);
+            }
+
+            // 如果有需要傳送的數據，就執行傳送
+            if (dataToSend) {
+                await sendDataWithChunks(dataToSend);
+                console.log(alertMessage);
+                alert(alertMessage);
+            }
+        }
 
         document.getElementById("beeButton").onclick = async () => {
             if (connected) {

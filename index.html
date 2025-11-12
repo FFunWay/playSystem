@@ -217,6 +217,9 @@
         // 分段傳送數據的函數
         async function sendDataWithChunks(data) {
             const encoder = new TextEncoder();
+            console.log("--- ready data ---");
+            console.log(data); 
+            console.log("----------------------");
             if (data.length > 20) {
                 const chunks = [];
                 for (let i = 0; i < data.length; i += 20) {

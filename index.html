@@ -94,6 +94,28 @@
                 alert("連接失敗");
             }
         };
+        window.addEventListener('storage', (event) => {
+            // 檢查是不是我們約定好的 "信箱" ('ble_command')
+            if (event.key === 'ble_command' && event.newValue) {
+                try {
+                    const payload = JSON.parse(event.newValue);
+                    console.log('收到來自 Storage 的指令:', payload);
+                    
+                    if (connected) {
+                        // 如果藍牙已連線，就直接執行指令
+                        // 我們可以直接重複使用您寫好的 handleUrlCommand 函式！
+                        handleUrlCommand(payload.cmd, payload.data);
+                    } else {
+                        // 如果尚未連線，就先存起來，等連線後再執行
+                        pendingCommand = payload;
+                        console.log('藍牙未連線，將指令設為待辦事項');
+                        alert('藍牙未連線，請先連線。指令將在連線後自動執行。');
+                    }
+                } catch (e) {
+                    console.error('解析 Storage 指令失敗:', e);
+                }
+            }
+        });
 
         // 記錄按鈕按下的數字
         document.querySelectorAll(".button").forEach(button => {

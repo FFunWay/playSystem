@@ -94,6 +94,7 @@
                 alert("連接失敗");
             }
         };
+        
         window.addEventListener('storage', (event) => {
             // 檢查是不是我們約定好的 "信箱" ('ble_command')
             if (event.key === 'ble_command' && event.newValue) {
